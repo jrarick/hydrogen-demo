@@ -16,12 +16,18 @@ import {
   ScrollRestoration,
   isRouteErrorResponse,
   type ShouldRevalidateFunction,
+  useOutlet,
+  unstable_useBlocker,
 } from '@remix-run/react';
 import type {CustomerAccessToken} from '@shopify/hydrogen/storefront-api-types';
 import favicon from '../public/favicon.svg';
 import resetStyles from './styles/reset.css';
 import appStyles from './styles/app.css';
+import tailwindStyles from './styles/tailwind.css';
 import {Layout} from '~/components/Layout';
+import {useGSAP} from '@gsap/react';
+import gsap from 'gsap';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -48,6 +54,8 @@ export function links() {
   return [
     {rel: 'stylesheet', href: resetStyles},
     {rel: 'stylesheet', href: appStyles},
+    {rel: 'stylesheet', href: tailwindStyles},
+    {rel: 'stylesheet', href: 'https://use.typekit.net/snv4dsx.css'},
     {
       rel: 'preconnect',
       href: 'https://cdn.shopify.com',
@@ -110,6 +118,24 @@ export async function loader({context}: LoaderFunctionArgs) {
 export default function App() {
   const nonce = useNonce();
   const data = useLoaderData<typeof loader>();
+  const outletWrapper = useRef(null);
+
+  const blocker = unstable_useBlocker(
+    ({ currentLocation, nextLocation }) => currentLocation.pathname !== nextLocation.pathname,
+  )
+
+  useEffect(() => {
+    const tl = gsap.timeline();
+    tl.to(outletWrapper.current, {
+      autoAlpha: 0,
+      duration: 0.2,
+      onComplete: () => blocker.proceed!()
+    });
+    tl.to(outletWrapper.current, {
+      autoAlpha: 1,
+      duration: 0.2,
+    })
+  }, [blocker.state === 'blocked'])
 
   return (
     <html lang="en">
@@ -119,9 +145,11 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="font-serif">
         <Layout {...data}>
-          <Outlet />
+          <div ref={outletWrapper}>
+            <Outlet />
+          </div>
         </Layout>
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />

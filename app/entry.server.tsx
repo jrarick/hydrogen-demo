@@ -10,7 +10,29 @@ export default async function handleRequest(
   responseHeaders: Headers,
   remixContext: EntryContext,
 ) {
-  const {nonce, header, NonceProvider} = createContentSecurityPolicy();
+  let localDirectives =
+    process.env.NODE_ENV === 'development'
+      ? ['localhost:*', 'ws://localhost:*', 'ws://127.0.0.1:*']
+      : [];
+
+  const {nonce, header, NonceProvider} = createContentSecurityPolicy({
+    defaultSrc: [
+      "'self'",
+      'cdn.shopify.com',
+      'shopify.com',
+      '*.typekit.net',
+      'data:',
+      ...localDirectives,
+    ],
+    styleSrc: [
+      "'self'",
+      "'unsafe-inline'",
+      'cdn.shopify.com',
+      '*.typekit.net',
+      'data:',
+      ...localDirectives,
+    ],
+  });
 
   const body = await renderToReadableStream(
     <NonceProvider>

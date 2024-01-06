@@ -26,6 +26,7 @@ import type {
   SelectedOption,
 } from '@shopify/hydrogen/storefront-api-types';
 import {getVariantUrl} from '~/utils';
+import clsx from 'clsx';
 
 export const meta: MetaFunction<typeof loader> = ({data}) => {
   return [{title: `Hydrogen | ${data?.product.title ?? ''}`}];
@@ -117,7 +118,7 @@ export default function Product() {
   const {product, variants} = useLoaderData<typeof loader>();
   const {selectedVariant} = product;
   return (
-    <div className="product">
+    <div className="product mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
       <ProductImage image={selectedVariant?.image} />
       <ProductMain
         selectedVariant={selectedVariant}
@@ -157,9 +158,10 @@ function ProductMain({
   const {title, descriptionHtml} = product;
   return (
     <div className="product-main">
-      <h1>{title}</h1>
-      <ProductPrice selectedVariant={selectedVariant} />
-      <br />
+      <h1 className="font-display text-4xl mb-2">{title}</h1>
+      <div className="text-xl mb-8">
+        <ProductPrice selectedVariant={selectedVariant} />
+      </div>
       <Suspense
         fallback={
           <ProductForm
@@ -182,14 +184,12 @@ function ProductMain({
           )}
         </Await>
       </Suspense>
-      <br />
-      <br />
-      <p>
-        <strong>Description</strong>
-      </p>
-      <br />
-      <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-      <br />
+
+      <hr className="border-b-2 w-60 border-gray-600 mt-16 mb-4" />
+      <div
+        className="text-gray-600 text-sm"
+        dangerouslySetInnerHTML={{__html: descriptionHtml}}
+      />
     </div>
   );
 }
@@ -204,16 +204,22 @@ function ProductPrice({
       {selectedVariant?.compareAtPrice ? (
         <>
           <p>Sale</p>
-          <br />
           <div className="product-price-on-sale">
-            {selectedVariant ? <Money data={selectedVariant.price} /> : null}
+            {selectedVariant ? (
+              <Money data={selectedVariant.price} withoutTrailingZeros={true} />
+            ) : null}
             <s>
-              <Money data={selectedVariant.compareAtPrice} />
+              <Money
+                data={selectedVariant.compareAtPrice}
+                withoutTrailingZeros={true}
+              />
             </s>
           </div>
         </>
       ) : (
-        selectedVariant?.price && <Money data={selectedVariant?.price} />
+        selectedVariant?.price && (
+          <Money data={selectedVariant?.price} withoutTrailingZeros={true} />
+        )
       )}
     </div>
   );
@@ -237,7 +243,6 @@ function ProductForm({
       >
         {({option}) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
-      <br />
       <AddToCartButton
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
@@ -261,6 +266,81 @@ function ProductForm({
 }
 
 function ProductOptions({option}: {option: VariantOption}) {
+  console.log(option);
+
+  if (option.name === 'Size') {
+    const sizesTruncated: any = {
+      'X-Small': 'XS',
+      'Small': 'S',
+      'Medium': 'M',
+      'Large': 'L',
+      'X-Large': 'XL',
+      'XX-Large': 'XXL',
+    };
+
+    return (
+      <div className="my-8">
+        <h5 className="mb-2">{option.name}</h5>
+        <div key={option.name} className="flex flex-row space-x-2">
+          {option.values.map(({value, isAvailable, isActive, to}) => (
+            <Link
+              className={clsx(
+                isAvailable ? 'opacity-100' : 'opacity-30',
+                isActive ? 'border border-black' : 'border border-gray-300',
+                'p-0.5 text-sm font-bold hover:no-underline hover: hover:bg-gray-100 transition-colors',
+              )}
+              key={option.name + value}
+              prefetch="intent"
+              preventScrollReset
+              replace
+              to={to}
+              aria-label={value}
+              title={value}
+            >
+              <div className="h-8 w-10 flex items-center justify-center">{sizesTruncated[value]}</div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (option.name === 'Color') {
+    const colorCodes: any = {
+      Green: 'bg-green-800',
+      Olive: 'bg-yellow-950',
+      Ocean: 'bg-sky-800',
+      Purple: 'bg-violet-950',
+      Red: 'bg-rose-900',
+    };
+
+    return (
+      <div className="my-8">
+        <h5 className="mb-2">{option.name}</h5>
+        <div key={option.name} className="flex flex-row space-x-2">
+          {option.values.map(({value, isAvailable, isActive, to}) => (
+            <Link
+              className={clsx(
+                isAvailable ? 'opacity-100' : 'opacity-30',
+                isActive ? 'border border-black' : 'border border-gray-300',
+                'p-0.5 text-sm font-bold hover:no-underline hover: hover:bg-gray-200 transition-colors',
+              )}
+              key={option.name + value}
+              prefetch="intent"
+              preventScrollReset
+              replace
+              to={to}
+              aria-label={value}
+              title={value}
+            >
+              <div className={`h-8 w-10 ${colorCodes[value]}`} />
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="product-options" key={option.name}>
       <h5>{option.name}</h5>
@@ -268,23 +348,22 @@ function ProductOptions({option}: {option: VariantOption}) {
         {option.values.map(({value, isAvailable, isActive, to}) => {
           return (
             <Link
-              className="product-options-item"
+              className={clsx(
+                isAvailable ? 'opacity-100' : 'opacity-30',
+                isActive ? 'border border-black' : 'border border-gray-300',
+                'px-4 py-2 mr-2 mb-2 text-sm font-bold hover:no-underline hover: hover:bg-gray-100 transition-colors',
+              )}
               key={option.name + value}
               prefetch="intent"
               preventScrollReset
               replace
               to={to}
-              style={{
-                border: isActive ? '1px solid black' : '1px solid transparent',
-                opacity: isAvailable ? 1 : 0.3,
-              }}
             >
               {value}
             </Link>
           );
         })}
       </div>
-      <br />
     </div>
   );
 }
@@ -315,6 +394,7 @@ function AddToCartButton({
             type="submit"
             onClick={onClick}
             disabled={disabled ?? fetcher.state !== 'idle'}
+            className="mt-12 bg-black text-white px-4 py-2 text-sm font-bold hover:no-underline hover:bg-gray-800 transition-colors"
           >
             {children}
           </button>
