@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import {Suspense, useEffect, useRef, useState} from 'react';
 import {defer, redirect, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
 import {
   Await,
@@ -6,6 +6,7 @@ import {
   useLoaderData,
   type MetaFunction,
   type FetcherWithComponents,
+  useSearchParams,
 } from '@remix-run/react';
 import type {
   ProductFragment,
@@ -27,6 +28,8 @@ import type {
 } from '@shopify/hydrogen/storefront-api-types';
 import {getVariantUrl} from '~/utils';
 import clsx from 'clsx';
+import {useGSAP} from '@gsap/react';
+import gsap from 'gsap';
 
 export const meta: MetaFunction<typeof loader> = ({data}) => {
   return [{title: `Hydrogen | ${data?.product.title ?? ''}`}];
@@ -117,9 +120,48 @@ function redirectToFirstVariant({
 export default function Product() {
   const {product, variants} = useLoaderData<typeof loader>();
   const {selectedVariant} = product;
+  const imageWrapper = useRef(null);
+  const [selectedVariantImage, setSelectedVariantImage] = useState<
+    ProductVariantFragment['image'] | null
+  >(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  useGSAP(
+    () => {
+      const tl = gsap.timeline();
+      tl.to(imageWrapper.current, {
+        autoAlpha: 0,
+        scale: 1.02,
+        duration: 0.3,
+      });
+      tl.call(() => {
+        setSelectedVariantImage(selectedVariant?.image);
+        setImageLoaded(false);
+      });
+    },
+    {dependencies: [searchParams.get('Color')]},
+  );
+
+  useGSAP(() => {
+    const tl = gsap.timeline();
+    if (imageLoaded) {
+      tl.to(imageWrapper.current, {
+        autoAlpha: 1,
+        scale: 1,
+        duration: 0.3,
+      });
+    }
+  }, [imageLoaded]);
+
   return (
     <div className="product mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-      <ProductImage image={selectedVariant?.image} />
+      <div ref={imageWrapper}>
+        <ProductImage
+          image={selectedVariantImage}
+          onLoad={() => setImageLoaded(true)}
+        />
+      </div>
       <ProductMain
         selectedVariant={selectedVariant}
         product={product}
@@ -129,7 +171,13 @@ export default function Product() {
   );
 }
 
-function ProductImage({image}: {image: ProductVariantFragment['image']}) {
+function ProductImage({
+  image,
+  onLoad,
+}: {
+  image: ProductVariantFragment['image'] | null;
+  onLoad?: () => void;
+}) {
   if (!image) {
     return <div className="product-image" />;
   }
@@ -141,6 +189,7 @@ function ProductImage({image}: {image: ProductVariantFragment['image']}) {
         data={image}
         key={image.id}
         sizes="(min-width: 45em) 50vw, 100vw"
+        onLoad={onLoad}
       />
     </div>
   );
@@ -266,16 +315,30 @@ function ProductForm({
 }
 
 function ProductOptions({option}: {option: VariantOption}) {
-  console.log(option);
-
   if (option.name === 'Size') {
     const sizesTruncated: any = {
       'X-Small': 'XS',
-      'Small': 'S',
-      'Medium': 'M',
-      'Large': 'L',
+      Small: 'S',
+      Medium: 'M',
+      Large: 'L',
       'X-Large': 'XL',
       'XX-Large': 'XXL',
+      '1': '1',
+      '2': '2',
+      '3': '3',
+      '4': '4',
+      '5': '5',
+      '6': '6',
+      '7': '7',
+      '8': '8',
+      '9': '9',
+      '10': '10',
+      '11': '11',
+      '12': '12',
+      '13': '13',
+      '14': '14',
+      '15': '15',
+      '16': '16',
     };
 
     return (
@@ -297,7 +360,9 @@ function ProductOptions({option}: {option: VariantOption}) {
               aria-label={value}
               title={value}
             >
-              <div className="h-8 w-10 flex items-center justify-center">{sizesTruncated[value]}</div>
+              <div className="h-8 w-10 flex items-center justify-center">
+                {sizesTruncated[value]}
+              </div>
             </Link>
           ))}
         </div>
@@ -351,7 +416,7 @@ function ProductOptions({option}: {option: VariantOption}) {
               className={clsx(
                 isAvailable ? 'opacity-100' : 'opacity-30',
                 isActive ? 'border border-black' : 'border border-gray-300',
-                'px-4 py-2 mr-2 mb-2 text-sm font-bold hover:no-underline hover: hover:bg-gray-100 transition-colors',
+                'px-4 py-2 mr-2 mb-2 text-sm bg-blue-500 font-bold hover:no-underline hover: hover:bg-gray-100 transition-colors',
               )}
               key={option.name + value}
               prefetch="intent"
@@ -390,14 +455,17 @@ function AddToCartButton({
             type="hidden"
             value={JSON.stringify(analytics)}
           />
-          <button
-            type="submit"
-            onClick={onClick}
-            disabled={disabled ?? fetcher.state !== 'idle'}
-            className="mt-12 bg-black text-white px-4 py-2 text-sm font-bold hover:no-underline hover:bg-gray-800 transition-colors"
-          >
-            {children}
-          </button>
+          <div className="mt-12">
+            <button
+              type="submit"
+              onClick={onClick}
+              disabled={disabled ?? fetcher.state !== 'idle'}
+              className="border border-black p-0.5 text-white text-sm font-bold hover:no-underline hover:bg-black transition-all duration-200"
+            >
+              <div className="bg-black px-4 py-2">{children}</div>
+              
+            </button>
+          </div>
         </>
       )}
     </CartForm>

@@ -19,8 +19,8 @@ export default function Collections() {
   const {collections} = useLoaderData<typeof loader>();
 
   return (
-    <div className="collections">
-      <h1>Collections</h1>
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="font-display text-5xl italic font-light mb-12">Collections</h1>
       <Pagination connection={collections}>
         {({nodes, isLoading, PreviousLink, NextLink}) => (
           <div>
@@ -61,20 +61,23 @@ function CollectionItem({
 }) {
   return (
     <Link
-      className="collection-item"
+      className="collection-item relative"
       key={collection.id}
       to={`/collections/${collection.handle}`}
       prefetch="intent"
     >
+      <div className="bg-gray-300 overflow-hidden hover:bg-gray-200 transition-colors duration-300">
       {collection?.image && (
         <Image
           alt={collection.image.altText || collection.title}
           aspectRatio="1/1"
           data={collection.image}
           loading={index < 3 ? 'eager' : undefined}
+          className="mix-blend-multiply hover:scale-105 transition-transform duration-300 ease-in-out"
         />
       )}
-      <h5>{collection.title}</h5>
+      </div>
+      <h5 className="absolute top-8 left-12 font-display font-light text-white text-4xl [text-shadow:1px_1px_3px_#6b7280]">{collection.title}</h5>
     </Link>
   );
 }

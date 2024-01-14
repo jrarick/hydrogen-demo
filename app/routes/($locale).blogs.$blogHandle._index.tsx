@@ -39,9 +39,9 @@ export default function Blog() {
   const {articles} = blog;
 
   return (
-    <div className="blog">
-      <h1>{blog.title}</h1>
-      <div className="blog-grid">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="font-display italic text-5xl font-light">{blog.title}</h1>
+      <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(var(--grid-item-width),1fr))] my-8">
         <Pagination connection={articles}>
           {({nodes, isLoading, PreviousLink, NextLink}) => {
             return (
@@ -96,8 +96,8 @@ function ArticleItem({
             />
           </div>
         )}
-        <h3>{article.title}</h3>
-        <small>{publishedAt}</small>
+        <h3 className="text-lg font-semibold">{article.title}</h3>
+        <p className="text-sm">{publishedAt}</p>
       </Link>
     </div>
   );

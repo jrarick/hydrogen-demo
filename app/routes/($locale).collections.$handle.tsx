@@ -8,6 +8,9 @@ import {
 } from '@shopify/hydrogen';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 import {useVariantUrl} from '~/utils';
+import {useGSAP} from '@gsap/react';
+import gsap from 'gsap';
+import {useRef} from 'react';
 
 export const meta: MetaFunction<typeof loader> = ({data}) => {
   return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
@@ -38,19 +41,65 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
 
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
+  const collectionTitleRef = useRef(null);
+  const collectionDescriptionRef = useRef(null);
+
+  useGSAP(
+    () => {
+      const tl = gsap.timeline();
+      tl.delay(0.2);
+      tl.fromTo(
+        collectionTitleRef.current,
+        {opacity: 0, scale: 1.02},
+        {opacity: 1, scale: 1, duration: 0.6},
+      );
+      tl.fromTo(
+        collectionDescriptionRef.current,
+        {opacity: 0, scale: 1.02},
+        {opacity: 1, scale: 1, duration: 0.6},
+      );
+      tl.fromTo(
+        '.product-grid-item',
+        {opacity: 0, scale: 1.02},
+        {opacity: 1, scale: 1, duration: 0.8, stagger: 0.1},
+      );
+    },
+    {dependencies: [collection.title]},
+  );
 
   return (
-    <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <h1
+        className="font-display text-5xl md:text-6xl font-light italic"
+        ref={collectionTitleRef}
+      >
+        {collection.title}
+      </h1>
+      <p
+        className="my-8 max-w-lg text-lg md:text-xl text-gray-500"
+        ref={collectionDescriptionRef}
+      >
+        {collection.description}
+      </p>
       <Pagination connection={collection.products}>
         {({nodes, isLoading, PreviousLink, NextLink}) => (
           <>
             <PreviousLink>
               {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
             </PreviousLink>
-            <ProductsGrid products={nodes} />
-            <br />
+            {/* <ProductsGrid products={nodes} /> */}
+            <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(var(--grid-item-width),1fr))] mb-8">
+              {nodes.map((product, index) => {
+                return (
+                  <div className="product-grid-item" key={product.id}>
+                    <ProductItem
+                      product={product}
+                      loading={index < 8 ? 'eager' : undefined}
+                    />
+                  </div>
+                );
+              })}
+            </div>
             <NextLink>
               {isLoading ? 'Loading...' : <span>Load more ↓</span>}
             </NextLink>
@@ -61,21 +110,23 @@ export default function Collection() {
   );
 }
 
-function ProductsGrid({products}: {products: ProductItemFragment[]}) {
-  return (
-    <div className="products-grid">
-      {products.map((product, index) => {
-        return (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
-          />
-        );
-      })}
-    </div>
-  );
-}
+// function ProductsGrid({products}: {products: ProductItemFragment[]}) {
+//   return (
+//     <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(var(--grid-item-width),1fr))] mb-8">
+//       {products.map((product, index) => {
+//         return (
+//           <div className="product-grid-item">
+//             <ProductItem
+//               key={product.id}
+//               product={product}
+//               loading={index < 8 ? 'eager' : undefined}
+//             />
+//           </div>
+//         );
+//       })}
+//     </div>
+//   );
+// }
 
 function ProductItem({
   product,
@@ -86,13 +137,9 @@ function ProductItem({
 }) {
   const variant = product.variants.nodes[0];
   const variantUrl = useVariantUrl(product.handle, variant.selectedOptions);
+
   return (
-    <Link
-      className="product-item"
-      key={product.id}
-      prefetch="intent"
-      to={variantUrl}
-    >
+    <div className="relative w-full overflow-hidden" key={product.id}>
       {product.featuredImage && (
         <Image
           alt={product.featuredImage.altText || product.title}
@@ -100,13 +147,31 @@ function ProductItem({
           data={product.featuredImage}
           loading={loading}
           sizes="(min-width: 45em) 400px, 100vw"
+          className="w-full h-auto"
         />
       )}
-      <h4>{product.title}</h4>
-      <small>
-        <Money data={product.priceRange.minVariantPrice} />
-      </small>
-    </Link>
+      <div className="absolute inset-0 flex flex-col justify-end items-start">
+        <div className="py-2 px-4 bg-white/70">
+          <Link
+            prefetch="intent"
+            to={variantUrl}
+            className="hover:no-underline group"
+          >
+            <span aria-hidden="true" className="absolute inset-0" />
+            <h4 className="text-base md:text-xl">{product.title}</h4>
+            <hr
+              aria-hidden="true"
+              className="border-b-2 border-black w-0 group-hover:w-full transition-[width] duration-300"
+            />
+          </Link>
+          <Money
+            className="text-sm md:text-base"
+            withoutTrailingZeros={true}
+            data={product.priceRange.minVariantPrice}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -16,8 +16,9 @@ import {
   ScrollRestoration,
   isRouteErrorResponse,
   type ShouldRevalidateFunction,
-  useOutlet,
-  unstable_useBlocker,
+  useLocation,
+  useBlocker,
+  unstable_BlockerFunction as BlockerFunction,
 } from '@remix-run/react';
 import type {CustomerAccessToken} from '@shopify/hydrogen/storefront-api-types';
 import favicon from '../public/favicon.svg';
@@ -25,9 +26,9 @@ import resetStyles from './styles/reset.css';
 import appStyles from './styles/app.css';
 import tailwindStyles from './styles/tailwind.css';
 import {Layout} from '~/components/Layout';
-import {useGSAP} from '@gsap/react';
+import {useCallback, useRef} from 'react';
 import gsap from 'gsap';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {useGSAP} from '@gsap/react';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -119,23 +120,39 @@ export default function App() {
   const nonce = useNonce();
   const data = useLoaderData<typeof loader>();
   const outletWrapper = useRef(null);
+  const location = useLocation();
 
-  const blocker = unstable_useBlocker(
-    ({ currentLocation, nextLocation }) => currentLocation.pathname !== nextLocation.pathname,
-  )
+  const shouldBlock = useCallback<BlockerFunction>(
+    ({currentLocation, nextLocation}) =>
+      currentLocation.pathname !== nextLocation.pathname,
+    [],
+  );
 
-  useEffect(() => {
-    const tl = gsap.timeline();
-    tl.to(outletWrapper.current, {
-      autoAlpha: 0,
-      duration: 0.2,
-      onComplete: () => blocker.proceed!()
-    });
-    tl.to(outletWrapper.current, {
-      autoAlpha: 1,
-      duration: 0.2,
-    })
-  }, [blocker.state === 'blocked'])
+  const blocker = useBlocker(shouldBlock);
+
+  useGSAP(
+    () => {
+      const tl = gsap.timeline();
+      tl.to(outletWrapper.current, {
+        autoAlpha: 0,
+        scale: 1.02,
+        duration: 0.3,
+      });
+      tl.call(() => (blocker.state === 'blocked' ? blocker.proceed() : null));
+    },
+    {dependencies: [blocker.state === 'blocked']},
+  );
+
+  useGSAP(
+    () => {
+      gsap.to(outletWrapper.current, {
+        autoAlpha: 1,
+        scale: 1,
+        duration: 0.5,
+      });
+    },
+    {dependencies: [location.pathname]},
+  );
 
   return (
     <html lang="en">
@@ -147,8 +164,10 @@ export default function App() {
       </head>
       <body className="font-serif">
         <Layout {...data}>
-          <div ref={outletWrapper}>
-            <Outlet />
+          <div className="max-w-full overflow-hidden">
+            <div ref={outletWrapper}>
+              <Outlet />
+            </div>
           </div>
         </Layout>
         <ScrollRestoration nonce={nonce} />

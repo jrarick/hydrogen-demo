@@ -16,9 +16,9 @@ export default function Policies() {
   const {policies} = useLoaderData<typeof loader>();
 
   return (
-    <div className="policies">
-      <h1>Policies</h1>
-      <div>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="font-display italic text-5xl font-light">Policies</h1>
+      <div className="flex flex-col space-y-2 mt-8">
         {policies.map((policy) => {
           if (!policy) return null;
           return (

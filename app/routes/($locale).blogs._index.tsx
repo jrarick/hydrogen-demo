@@ -27,9 +27,9 @@ export default function Blogs() {
   const {blogs} = useLoaderData<typeof loader>();
 
   return (
-    <div className="blogs">
-      <h1>Blogs</h1>
-      <div className="blogs-grid">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="font-display italic text-5xl font-light">Blogs</h1>
+      <div className="flex flex-col space-y-2 mt-8">
         <Pagination connection={blogs}>
           {({nodes, isLoading, PreviousLink, NextLink}) => {
             return (
@@ -40,7 +40,7 @@ export default function Blogs() {
                 {nodes.map((blog) => {
                   return (
                     <Link
-                      className="blog"
+                      className="text-lg font-semibold"
                       key={blog.handle}
                       prefetch="intent"
                       to={`/blogs/${blog.handle}`}

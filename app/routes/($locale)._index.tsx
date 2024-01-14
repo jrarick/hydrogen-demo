@@ -7,24 +7,20 @@ import type {
   RecommendedProductsQuery,
 } from 'storefrontapi.generated';
 import womanWalking from '~/assets/woman-walking.mp4';
-import {Swiper, SwiperSlide} from 'swiper/react';
-import {Navigation, A11y} from 'swiper/modules';
-import swiperStyles from 'swiper/swiper-bundle.css';
-import swiperCustomStyles from '~/styles/swiper-custom.css';
-import {useGSAP} from '@gsap/react';
 import gsap from 'gsap';
+import {useGSAP} from '@gsap/react';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
 import {Observer} from 'gsap/Observer';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '~/@/components/ui/carousel';
 
 export const meta: MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
-};
-
-export const links = () => {
-  return [
-    {rel: 'stylesheet', href: swiperStyles},
-    {rel: 'stylesheet', href: swiperCustomStyles},
-  ];
 };
 
 export async function loader({context}: LoaderFunctionArgs) {
@@ -42,6 +38,7 @@ export default function Homepage() {
     <div className="home">
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
+      <Incentives />
     </div>
   );
 }
@@ -66,7 +63,7 @@ function FeaturedCollection({
           {
             opacity: 1,
             scale: 1,
-            duration: 0.3,
+            duration: 0.6,
             delay: i === 2 ? 1.5 : i * 0.3 + 0.5,
           },
         );
@@ -78,43 +75,33 @@ function FeaturedCollection({
   if (!collection) return null;
 
   return (
-    // <Link
-    //   className="featured-collection"
-    //   to={`/collections/${collection.handle}`}
-    // >
-    // {image && (
-    //   <div className="featured-collection-image">
-    //     <Image data={image} sizes="100vw" />
-    //   </div>
-    // )}
-    // </Link>
-    <div className="relative">
+    <div className="relative" ref={featuredMain}>
       <div className="absolute top-0 left-0 w-full h-full bg-gray-900/40" />
       <video
-        className="w-full h-full object-cover"
+        className=" h-[44rem] w-auto md:w-full md:h-full object-cover"
         src={womanWalking}
         autoPlay
         loop
         muted
       />
-      <div
-        ref={featuredMain}
-        className="absolute w-full h-full top-0 flex flex-col justify-center items-center"
-      >
+      <div className="absolute w-full h-full top-0 flex flex-col justify-center items-center">
         <h1 className="font-display font-thin text-white space-y-4 flex flex-col items-center">
-          <div className="display-text text-4xl md:text-7xl lg:text-8xl">
+          <div className="display-text text-5xl md:text-7xl lg:text-8xl">
             Elegant Styles
           </div>
-          <div className="display-text italic text-3xl md:text-6xl lg:text-7xl">
+          <div className="display-text italic text-4xl md:text-6xl lg:text-7xl">
             For Any Wardrobe
           </div>
         </h1>
         <Link
           to={`/collections/${collection.handle}`}
-          className="display-text text-white hover:no-underline mt-4 md:mt-8 text:xl md:text-2xl group"
+          className="display-text text-white hover:no-underline mt-4 md:mt-8 text-lg md:text-2xl group"
         >
           Shop our featured collection →
-          <hr aria-hidden="true" className="border-white border-b-4 w-0 group-hover:w-full transition-[width] duration-300" />
+          <hr
+            aria-hidden="true"
+            className="border-white border-b-4 w-0 group-hover:w-full transition-[width] duration-300"
+          />
         </Link>
       </div>
     </div>
@@ -144,7 +131,7 @@ function RecommendedProducts({
           },
           opacity: 1,
           scaleY: 1,
-          duration: 0.3,
+          duration: 0.6,
           delay: 0,
         },
       );
@@ -176,15 +163,17 @@ function RecommendedProducts({
           gsap.to(`.slide-image-${i}`, {
             scale: 1.05,
             duration: 0.3,
+            ease: 'power3.out',
           });
-        })
+        });
 
         slideContainer.addEventListener('mouseout', () => {
           gsap.to(`.slide-image-${i}`, {
             scale: 1,
             duration: 0.3,
+            ease: 'power3.out',
           });
-        })
+        });
       });
     },
     {scope: recommendedMain},
@@ -192,67 +181,111 @@ function RecommendedProducts({
 
   return (
     <div
+      className="mx-auto max-w-7xl px-16 py-12"
       ref={recommendedMain}
-      className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12"
     >
-      <h2 className="header-text font-display text-2xl md:text-3xl mb-6">
+      <h2 className="header-text font-display font-light text-2xl md:text-3xl mb-6">
         Your Personalized Selections
       </h2>
       <Suspense fallback={<div>Loading...</div>}>
         <Await resolve={products}>
           {({products}) => (
-            <Swiper
-              navigation={true}
-              modules={[Navigation, A11y]}
-              spaceBetween={25}
-              slidesPerView={1}
-              breakpoints={{
-                480: {
-                  slidesPerView: 2,
-                },
-                998: {
-                  slidesPerView: 3,
-                },
-              }}
-            >
-              {products.nodes.map((product, i) => (
-                <SwiperSlide key={product.id}>
-                  <div className="slide-container relative w-full">
-                    <Image
-                      data={product.images.nodes[0]}
-                      aspectRatio="1/1"
-                      sizes="(min-width: 45em) 20vw, 50vw"
-                      className={`slide-image slide-image-${i}`}
-                    />
-                    <div className="absolute inset-0 flex flex-col justify-end items-start">
-                      <div className="py-2 px-4 bg-white/70">
-                        <Link
-                          to={`/products/${product.handle}`}
-                          className="hover:no-underline group"
-                        >
-                          <span
-                            aria-hidden="true"
-                            className="absolute inset-0"
+            <Carousel>
+              <CarouselContent>
+                {products.nodes.map((product, i) => (
+                  <CarouselItem key={product.id} className="sm:basis-1/2 md:basis-1/3 slide-container">
+                    <div className="relative w-full overflow-hidden">
+                      <Image
+                        className={`slide-image slide-image-${i}`}
+                        data={product.images.nodes[0]}
+                        aspectRatio="1/1"
+                        sizes="(min-width: 45em) 20vw, 50vw"
+                      />
+                      <div className="absolute inset-0 flex flex-col justify-end items-start">
+                        <div className="py-2 px-4 bg-white/70">
+                          <Link
+                            to={`/products/${product.handle}`}
+                            className="hover:no-underline group"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className="absolute inset-0"
+                            />
+                            <h4 className="text-base md:text-xl">
+                              {product.title}
+                            </h4>
+                            <hr
+                              aria-hidden="true"
+                              className="border-b-2 border-black w-0 group-hover:w-full transition-[width] duration-300"
+                            />
+                          </Link>
+                          <Money
+                            className="text-sm md:text-base"
+                            withoutTrailingZeros={true}
+                            data={product.priceRange.minVariantPrice}
                           />
-                          <h4 className="text-base md:text-xl">
-                            {product.title}
-                          </h4>
-                          <hr aria-hidden="true" className="border-b-2 border-black w-0 group-hover:w-full transition-[width] duration-300" />
-                        </Link>
-                        <Money
-                          className="text-sm md:text-base"
-                          withoutTrailingZeros={true}
-                          data={product.priceRange.minVariantPrice}
-                        />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
           )}
         </Await>
       </Suspense>
+    </div>
+  );
+}
+
+function Incentives() {
+  const incentives = [
+    {
+      name: 'Free shipping',
+      description:
+        'From our facilities to your doorstep within 4 business days completely free of charge.',
+    },
+    {
+      name: 'Quality guarantee',
+      description:
+        "If you aren't completely satisfied with your purchase, send it back within 60 days for a full refund.",
+    },
+    {
+      name: 'Exchanges',
+      description:
+        "Need a different color or size? Not a problem, just return and we'll hand deliver your selection.",
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+      <div className="bg-gray-50 px-6 py-16 sm:p-16 border border-gray-500/20">
+        <div className="mx-auto max-w-xl lg:max-w-none">
+          <div className="text-center">
+            <h2 className="text-2xl md:text-3xl font-display font-light text-gray-900">
+              Customers First
+            </h2>
+            <hr className="border-b-2 border-gray-500/20 mx-auto my-4 w-80 max-w-[75%]" />
+          </div>
+          <div className="mx-auto mt-8 grid max-w-sm grid-cols-1 gap-x-8 gap-y-10 sm:max-w-none lg:grid-cols-3">
+            {incentives.map((incentive) => (
+              <div
+                key={incentive.name}
+                className="text-center sm:flex sm:text-left lg:block lg:text-center"
+              >
+                <div className="mt-3 sm:ml-6 sm:mt-0 lg:ml-0 lg:mt-6">
+                  <h3 className="text-lg text-gray-900">{incentive.name}</h3>
+                  <p className="mt-2 text-sm text-gray-500">
+                    {incentive.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
